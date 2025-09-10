@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JoyUp Agency | Quote Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Cairo:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Cairo', sans-serif;
+            transition: background-color 0.3s;
+        }
+
+        [dir="rtl"] {
+            font-family: 'Cairo', 'Inter', sans-serif;
+        }
+
+        .nav-link {
+            transition: color 0.2s;
+        }
+
+        .page {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .sticky-footer {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .suggestion-btn {
+            transition: all 0.2s;
+        }
+
+        /* Accordion styles for Terms page */
+        .accordion-item summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .accordion-item summary {
+            position: relative;
+            padding-right: 2rem;
+        }
+
+        .accordion-item summary::after {
+            content: '+';
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .accordion-item[open] summary::after {
+            transform: translateY(-50%) rotate(45deg);
+        }
+    </style>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+        // Make firebase functions available globally on the window object
+        window.firebase = {
+            initializeApp,
+            getFirestore, doc, getDoc, setDoc, onSnapshot,
+            getAuth, signInAnonymously
+        };
+    </script>
+</head>
+
+<body class="bg-gray-50">
+
+    <div id="app-container" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-48">
+        <!-- Header -->
+        <header class="py-6">
+            <nav class="flex items-center justify-between">
+                <a href="#" id="logo-link" class="flex items-center space-x-3">
+                    <img id="logo-img" src="https://i.imgur.com/u5aJVy0.png" alt="JoyUp Agency Logo"
+                        class="h-12 w-auto">
+                    <span id="agency-name" class="text-2xl font-bold text-gray-800"></span>
+                </a>
+                <div id="nav-links" class="flex items-center space-x-4 md:space-x-8">
+                    <a href="#" class="nav-link text-gray-600 hover:text-blue-600 font-semibold"
+                        data-page="calculator"></a>
+                    <a href="#" class="nav-link text-gray-600 hover:text-blue-600 font-semibold" data-page="terms"></a>
+                    <a href="#" class="nav-link text-gray-600 hover:text-blue-600 p-2 rounded-full" data-page="settings"
+                        title="Settings">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                            </path>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
+                            </path>
+                        </svg>
+                    </a>
+                    <button id="lang-switcher"
+                        class="bg-blue-500 text-white font-bold text-sm rounded-md px-3 py-1 hover:bg-blue-600 transition-colors"
+                        title="Change Language">
+                        AR
+                    </button>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Calculator Page -->
+            <div id="calculator-page" class="page">
+                <div class="text-center mb-10">
+                    <h1 id="welcome-message" class="text-4xl font-extrabold text-gray-900 mb-2"></h1>
+                    <p class="text-lg text-gray-500 max-w-2xl mx-auto" data-translate="welcomeSubMessage"></p>
+                </div>
+
+                <div id="services-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Service cards will be injected here -->
+                </div>
+            </div>
+
+            <!-- Terms Page -->
+            <div id="terms-page" class="page hidden">
+                <div class="bg-white p-8 rounded-lg shadow-md max-w-4xl mx-auto">
+                    <h1 class="text-3xl font-bold text-center mb-8" data-translate="termsTitle"></h1>
+                    <div id="terms-accordion-container" class="space-y-4">
+                        <!-- Accordion items will be injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div id="settings-page" class="page hidden">
+                <!-- Admin Login -->
+                <div id="admin-login-view" class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md text-center">
+                    <h2 class="text-2xl font-bold mb-4" data-translate="adminLogin"></h2>
+                    <p class="text-gray-600 mb-6" data-translate="enterPassword"></p>
+                    <input type="password" id="admin-password-input" class="w-full p-2 border rounded mb-4"
+                        placeholder="••••••••">
+                    <button id="admin-login-btn"
+                        class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700"
+                        data-translate="login"></button>
+                    <p id="admin-login-error" class="text-red-500 mt-4 h-4"></p>
+                </div>
+                <!-- Admin Settings View -->
+                <div id="admin-settings-view" class="hidden">
+                    <div class="bg-white rounded-lg shadow-md">
+                        <div class="border-b border-gray-200">
+                            <nav class="-mb-px flex space-x-6 px-6" aria-label="Tabs">
+                                <!-- Tabs will be injected here -->
+                            </nav>
+                        </div>
+                        <div id="settings-tab-content" class="p-6">
+                            <!-- Tab content will be injected here -->
+                        </div>
+                    </div>
+                    <button id="save-settings-btn"
+                        class="mt-6 w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition-colors"
+                        data-translate="saveChanges"></button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Sticky Footer -->
+    <footer id="sticky-footer"
+        class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t-2 border-gray-200 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="py-3 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 items-center">
+                <!-- Subtotal -->
+                <div class="text-center md:text-left">
+                    <span class="text-sm font-bold text-gray-500 uppercase" data-translate="subtotal"></span>
+                    <p id="subtotal-value" class="text-xl font-extrabold text-gray-800"></p>
+                </div>
+                <!-- Discounts -->
+                <div class="text-center md:text-left">
+                    <span class="text-sm font-bold text-gray-500 uppercase" data-translate="durationDiscount"></span>
+                    <p id="duration-discount-value" class="text-lg font-bold text-green-600"></p>
+                </div>
+                <div class="text-center md:text-left">
+                    <span class="text-sm font-bold text-gray-500 uppercase" data-translate="promoDiscount"></span>
+                    <p id="promo-discount-value" class="text-lg font-bold text-green-600"></p>
+                </div>
+                <!-- Final Total -->
+                <div class="text-center md:text-left lg:col-span-2">
+                    <div class="flex flex-col lg:flex-row items-center justify-between bg-blue-50 p-3 rounded-lg">
+                        <div>
+                            <span class="text-md font-bold text-blue-800 uppercase" data-translate="finalTotal"></span>
+                            <p id="final-total-value" class="text-3xl font-extrabold text-blue-600"></p>
+                        </div>
+                        <div class="flex items-center space-x-4 mt-2 lg:mt-0">
+                            <button id="share-quote-btn"
+                                class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300"
+                                data-translate="shareQuote"></button>
+                            <button id="export-pdf-btn"
+                                class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700"
+                                data-translate="exportPDF"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Duration Slider & Promo -->
+            <div class="py-3 border-t">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1"
+                            data-translate="contractDuration"></label>
+                        <div class="flex items-center space-x-4">
+                            <input id="duration-slider" type="range" min="0" max="24" value="0"
+                                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <span id="duration-value" class="font-bold text-lg text-blue-600 w-20 text-center"></span>
+                        </div>
+                        <div id="suggestion-presets" class="flex space-x-2 mt-2">
+                            <!-- Suggestion buttons will be injected here -->
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1" data-translate="promoCode"></label>
+                        <div class="flex">
+                            <input type="text" id="promo-code-input"
+                                class="w-full p-2 border border-gray-300 rounded-l-md">
+                            <button id="apply-promo-btn"
+                                class="bg-gray-800 text-white font-bold px-4 rounded-r-md hover:bg-gray-900"></button>
+                        </div>
+                        <p id="promo-status" class="h-4 mt-1 text-sm"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Main Footer -->
+    <div id="main-footer" class="bg-gray-800 text-white mt-12">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
+            <p class="font-bold text-lg">JoyUp Agency</p>
+            <p class="text-gray-400 text-sm">&copy; 2024. All Rights Reserved.</p>
+            <div id="social-links-container" class="flex justify-center space-x-6 mt-4">
+                <!-- Social links will be injected here -->
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Suggestion Modal -->
+    <div id="suggestion-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 text-center">
+            <h3 class="text-2xl font-bold mb-4" data-translate="suggestionPreviewTitle"></h3>
+            <div class="flex justify-around items-center mb-6">
+                <div>
+                    <p class="text-sm text-gray-500" data-translate="currentPrice"></p>
+                    <p id="modal-current-price" class="text-2xl font-bold text-gray-500 line-through"></p>
+                </div>
+                <div>
+                    <p class="text-sm text-blue-500" data-translate="priceAfterDiscount"></p>
+                    <p id="modal-new-price" class="text-3xl font-extrabold text-blue-600"></p>
+                </div>
+            </div>
+            <div class="flex space-x-4">
+                <button id="modal-close-btn"
+                    class="w-full bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded hover:bg-gray-300"
+                    data-translate="cancel"></button>
+                <button id="modal-apply-btn"
+                    class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700"
+                    data-translate="applySuggestion"></button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function () {
+
+            // --- FIREBASE SETUP --- //
+            const firebaseConfig = {
+                apiKey: "AIzaSyA3vF4538fDcMtRvz53S4CPAXaKysgHLMg",
+                authDomain: "joyupc-f1c27.firebaseapp.com",
+                projectId: "joyupc-f1c27",
+                storageBucket: "joyupc-f1c27.firebasestorage.app",
+                messagingSenderId: "199174349311",
+                appId: "1:199174349311:web:f3a327ce3ca49df80c07ca"
+            };
+
+            let db;
+            const DATA_DOC_ID = 'main-data-document'; // We'll store all app data in one document
+            let isInitialLoad = true;
+
+
+            // --- INITIAL DATA & STATE --- //
+            const initialData = {
+                services: [
+                    {
+                        id: 1,
+                        name: { en: 'Content Creation & Design', ar: 'صناعة المحتوى والتصميم' },
+                        options: [
+                            { id: 101, label: { en: 'Static Design Post', ar: 'بوست تصميم ثابت' }, unit_price: 225 },
+                            { id: 102, label: { en: 'Motion Graphic / Reel (30-60s)', ar: 'موشن جرافيك / ريل (30-60 ثانية)' }, unit_price: 750 },
+                        ]
+                    },
+                    {
+                        id: 2,
+                        name: { en: 'Social Media Management', ar: 'إدارة السوشيال ميديا' },
+                        options: [
+                            { id: 201, label: { en: 'Content Management & Calendar (2 Platforms)', ar: 'إدارة محتوى وجدولة (منصتين)' }, unit_price: 4500 },
+                            { id: 202, label: { en: 'Community Management Package (Basic)', ar: 'باقة إدارة مجتمع (أساسي)' }, unit_price: 3000 },
+                        ]
+                    },
+                    {
+                        id: 3,
+                        name: { en: 'Paid Advertising', ar: 'الإعلانات الممولة' },
+                        options: [
+                            { id: 301, label: { en: 'Ad Campaign Management (15-25% of budget)', ar: 'إدارة الحملات الإعلانية (15-25% من الميزانية)' }, unit_price: 4000 },
+                        ]
+                    },
+                    {
+                        id: 4,
+                        name: { en: 'Websites & Landing Pages', ar: 'المواقع وصفحات الهبوط' },
+                        options: [
+                            { id: 401, label: { en: 'Landing Page Design', ar: 'تصميم صفحة هبوط' }, unit_price: 7500 },
+                            { id: 402, label: { en: 'E-commerce Website (One-time)', ar: 'موقع إلكتروني (مرة واحدة)' }, unit_price: 27500 },
+                        ]
+                    },
+                    {
+                        id: 5,
+                        name: { en: 'SEO & Content Writing', ar: 'تحسين محركات البحث وكتابة المحتوى' },
+                        options: [
+                            { id: 501, label: { en: 'SEO Article (1000-1500 words)', ar: 'مقال SEO (1000-1500 كلمة)' }, unit_price: 900 },
+                            { id: 502, label: { en: 'Monthly SEO Retainer', ar: 'متابعة شهرية لـ SEO' }, unit_price: 8500 },
+                        ]
+                    },
+                    {
+                        id: 6,
+                        name: { en: 'Email / CRM Marketing', ar: 'التسويق عبر الإيميل / CRM' },
+                        options: [
+                            { id: 601, label: { en: 'Email Automation Flow Setup', ar: 'إعداد تدفق أتمتة الإيميل' }, unit_price: 2750 },
+                            { id: 602, label: { en: 'Monthly Email Campaigns (up to 4)', ar: 'حملات إيميل شهرية (حتى 4)' }, unit_price: 3000 },
+                        ]
+                    }
+                ],
+                promoCodes: [
+                    { code: 'SAVE10', percent: 10, active: true },
+                    { code: 'JOYUP20', percent: 20, active: true },
+                    { code: 'INACTIVE', percent: 15, active: false }
+                ],
+                settings: {
+                    logoUrl: 'https://i.imgur.com/u5aJVy0.png',
+                    currency: { en: 'EGP', ar: 'جنيه' },
+                    adminPassword: 'Mo04255767', // Plain text password
+                    contractDiscountTiers: [
+                        { months: 3, percent: 5 },
+                        { months: 6, percent: 10 },
+                        { months: 12, percent: 15 },
+                    ],
+                    suggestionPresets: [3, 6, 12],
+                    socialLinks: {
+                        facebook: 'https://facebook.com',
+                        linkedin: 'https://linkedin.com',
+                        instagram: 'https://instagram.com',
+                        tiktok: 'https://tiktok.com'
+                    }
+                },
+                translations: {
+                    // --- General ---
+                    agencyName: { en: 'JoyUp Agency', ar: 'وكالة JoyUp' },
+                    saveChanges: { en: 'Save Changes', ar: 'حفظ التغييرات' },
+                    cancel: { en: 'Cancel', ar: 'إلغاء' },
+                    delete: { en: 'Delete', ar: 'حذف' },
+                    confirmDelete: { en: 'Are you sure you want to delete this?', ar: 'هل أنت متأكد من رغبتك في الحذف؟' },
+                    months: { en: 'Months', ar: 'شهور' },
+                    // --- Navigation ---
+                    calculator: { en: 'Calculator', ar: 'الحاسبة' },
+                    terms: { en: 'Terms', ar: 'الشروط' },
+                    settings: { en: 'Settings', ar: 'الإعدادات' },
+                    // --- Welcome Message ---
+                    welcomeMessage: { en: 'Build Your Custom Quote', ar: 'كوّن عرض سعرك المخصص' },
+                    welcomeSubMessage: { en: 'Select the services you need, adjust quantities, and see your estimated price instantly.', ar: 'اختر الخدمات التي تحتاجها، عدّل الكميات، وشاهد السعر التقديري فوراً.' },
+                    // --- Calculator Page ---
+                    serviceEnabled: { en: 'Enabled', ar: 'مُفعّل' },
+                    // --- NEW KEYS ---
+                    promoInvalid: { en: 'Invalid code', ar: 'الكود غير صالح' },
+                    promoInactive: { en: 'Code expired', ar: 'الكود منتهي الصلاحية' },
+                    promoSuccess: { en: 'Code applied!', ar: 'تم تطبيق الكود!' },
+                    shareQuote: { en: 'Share Quote', ar: 'مشاركة العرض' },
+                    exportPDF: { en: 'Export PDF', ar: 'تصدير PDF' },
+                    quote: { en: 'Quote', ar: 'عرض سعر' },
+                    termsTitle: { en: 'Terms & Conditions', ar: 'الشروط والأحكام' },
+                    settingsTitle: { en: 'Settings', ar: 'الإعدادات' },
+                    suggestionPreviewTitle: { en: 'Suggestion Preview', ar: 'معاينة الاقتراح' },
+                    currentPrice: { en: 'Current Price', ar: 'السعر الحالي' },
+                    priceAfterDiscount: { en: 'After Discount', ar: 'بعد الخصم' },
+                    applySuggestion: { en: 'Apply Suggestion', ar: 'تطبيق الاقتراح' },
+                    totalBeforeDiscount: { en: 'Total Before Discount', ar: 'الإجمالي قبل الخصم' },
+                    // --- END NEW KEYS ---
+                    // --- Sticky Footer ---
+                    subtotal: { en: 'Monthly Total', ar: 'الإجمالي الشهري' },
+                    durationDiscount: { en: 'Duration Discount', ar: 'خصم المدة' },
+                    promoDiscount: { en: 'Promo Discount', ar: 'خصم الكوبون' },
+                    finalTotal: { en: 'Contract Total', ar: 'إجمالي العقد' },
+                    promoCode: { en: 'Promo Code', ar: 'كود الخصم' },
+                    apply: { en: 'Apply', ar: 'تطبيق' },
+                    contractDuration: { en: 'Contract Duration', ar: 'مدة العقد' },
+                    // --- Settings Page ---
+                    adminLogin: { en: 'Admin Access', ar: 'دخول المدير' },
+                    enterPassword: { en: 'Please enter the admin password to manage settings.', ar: 'الرجاء إدخال كلمة مرور المدير لإدارة الإعدادات.' },
+                    login: { en: 'Login', ar: 'دخول' },
+                    incorrectPassword: { en: 'Incorrect password. Please try again.', ar: 'كلمة المرور غير صحيحة. حاول مرة أخرى.' },
+                    // Tabs
+                    tabServices: { en: 'Services', ar: 'الخدمات' },
+                    tabDiscounts: { en: 'Discounts', ar: 'الخصومات' },
+                    tabPromos: { en: 'Promo Codes', ar: 'أكواد الخصم' },
+                    tabBranding: { en: 'Branding', ar: 'العلامة التجارية' },
+                    tabSocial: { en: 'Social Links', ar: 'روابط التواصل' },
+                    tabAdmin: { en: 'Admin', ar: 'المدير' },
+                    // Services Tab
+                    manageServices: { en: 'Manage Services', ar: 'إدارة الخدمات' },
+                    addNewService: { en: 'Add New Service', ar: 'إضافة خدمة جديدة' },
+                    deleteService: { en: 'Delete Service', ar: 'حذف خدمة' },
+                    serviceNameEn: { en: 'Service Name (EN)', ar: 'اسم الخدمة (EN)' },
+                    serviceNameAr: { en: 'Service Name (AR)', ar: 'اسم الخدمة (AR)' },
+                    options: { en: 'Options', ar: 'الخيارات' },
+                    addOption: { en: 'Add Option', ar: 'إضافة خيار' },
+                    optionLabelEn: { en: 'Option Label (EN)', ar: 'اسم الخيار (EN)' },
+                    optionLabelAr: { en: 'Option Label (AR)', ar: 'اسم الخيار (AR)' },
+                    unitPrice: { en: 'Unit Price', ar: 'سعر الوحدة' },
+                    // Discounts Tab
+                    manageDiscounts: { en: 'Manage Contract Discounts', ar: 'إدارة خصومات العقود' },
+                    addNewTier: { en: 'Add New Tier', ar: 'إضافة شريحة جديدة' },
+                    discountMonths: { en: 'Minimum Months', ar: 'أقل عدد شهور' },
+                    discountPercent: { en: 'Discount %', ar: 'نسبة الخصم %' },
+                    suggestionPresets: { en: 'Suggestion Presets (comma-separated)', ar: 'اقتراحات المدة (مفصولة بفاصلة)' },
+                    // Promos Tab
+                    managePromos: { en: 'Manage Promo Codes', ar: 'إدارة أكواد الخصم' },
+                    addNewPromo: { en: 'Add New Promo', ar: 'إضافة كود جديد' },
+                    promoCodeLabel: { en: 'Code', ar: 'الكود' },
+                    promoPercent: { en: 'Percent %', ar: 'النسبة %' },
+                    promoActive: { en: 'Active', ar: 'مُفعّل' },
+                    // Branding Tab
+                    manageBranding: { en: 'Manage Branding', ar: 'إدارة العلامة التجارية' },
+                    logo: { en: 'Logo', ar: 'الشعار' },
+                    uploadLogo: { en: 'Upload New Logo', ar: 'رفع شعار جديد' },
+                    currencyEn: { en: 'Currency (EN)', ar: 'العملة (EN)' },
+                    currencyAr: { en: 'Currency (AR)', ar: 'العملة (AR)' },
+                    // Social Tab
+                    manageSocial: { en: 'Manage Social Media Links', ar: 'إدارة روابط التواصل' },
+                    // Admin Tab
+                    manageAdmin: { en: 'Manage Admin Account', ar: 'إدارة حساب المدير' },
+                    changePassword: { en: 'Change Password', ar: 'تغيير كلمة المرور' },
+                    currentPassword: { en: 'Current Password', ar: 'كلمة المرور الحالية' },
+                    newPassword: { en: 'New Password', ar: 'كلمة المرور الجديدة' },
+                    confirmNewPassword: { en: 'Confirm New Password', ar: 'تأكيد كلمة المرور الجديدة' },
+                    incorrectCurrentPassword: { en: 'Incorrect current password.', ar: 'كلمة المرور الحالية غير صحيحة.' },
+                    passwordsDoNotMatch: { en: 'New passwords do not match.', ar: 'كلمتا المرور الجديدتان غير متطابقتين.' },
+                    passwordChanged: { en: 'Password changed successfully!', ar: 'تم تغيير كلمة المرور بنجاح!' },
+                    // Terms
+                    terms_1_title: { en: '1. Definitions', ar: '١. التعريفات' },
+                    terms_1_content: { en: '<strong>Provider:</strong> The company/freelancer responsible for providing marketing, design, and advertising services.<br><strong>Client:</strong> The contracting party to obtain the services.<br><strong>Services:</strong> Includes everything agreed upon, such as design, content management, paid ads, photography, or any additional services.', ar: '<strong>المزود:</strong> شركة/فريلانسر مسؤول عن تقديم خدمات التسويق والتصميم والإعلانات.<br><strong>العميل:</strong> الطرف المتعاقد للحصول على الخدمات.<br><strong>الخدمات:</strong> تشمل كل ما يتم الاتفاق عليه من تصميم، إدارة محتوى، إعلانات ممولة، تصوير، أو أي خدمات إضافية.' },
+                    terms_2_title: { en: '2. Scope of Work', ar: '٢. نطاق العمل' },
+                    terms_2_content: { en: 'The agreed-upon services are specified in writing in the price quote/contract.<br>Any additional services not mentioned in the contract are considered outside the scope and will be priced separately.', ar: 'يتم تحديد الخدمات المتفق عليها بشكل مكتوب في عرض السعر/العقد.<br>أي خدمات إضافية لم تُذكر بالعقد تعتبر خارجة عن نطاق التعاقد ويتم تسعيرها بشكل منفصل.' },
+                    terms_3_title: { en: '3. Contract Duration', ar: '٣. مدة التعاقد' },
+                    terms_3_content: { en: 'The contract begins on the date of signing the agreement or the first payment transfer.<br>The contract duration and number of months are determined in advance, with the possibility of renewal by mutual agreement.', ar: 'يبدأ التعاقد من تاريخ توقيع الاتفاق أو تحويل أول دفعة.<br>يتم تحديد مدة التعاقد وعدد الشهور مسبقًا، مع إمكانية التجديد باتفاق الطرفين.' },
+                    terms_4_title: { en: '4. Payment', ar: '٤. الدفع' },
+                    terms_4_content: { en: '50% is paid in advance before work begins, and the remaining 50% upon delivery (or as agreed).<br>All payments are non-refundable after work has commenced.<br>Any delay in payment gives the provider the right to temporarily suspend work until payment is made.', ar: 'يتم دفع 50% مقدمًا قبل بدء العمل و50% المتبقية عند التسليم (أو حسب ما يتم الاتفاق عليه).<br>جميع المدفوعات غير قابلة للاسترداد بعد بدء العمل.<br>أي تأخير في الدفع يمنح المزود الحق في إيقاف العمل مؤقتًا لحين السداد.' },
+                    terms_5_title: { en: '5. Revisions', ar: '٥. التعديلات' },
+                    terms_5_content: { en: 'The client is entitled to two free revisions for each service/design.<br>Any additional revision will be charged at an extra cost to be agreed upon.<br>Revisions do not include redoing the work from scratch or changing the fundamental agreed-upon idea.', ar: 'يحق للعميل بطلب تعديلين مجانيين على كل خدمة/تصميم.<br>أي تعديل إضافي يتم احتسابه بتكلفة إضافية يتم الاتفاق عليها.<br>لا تشمل التعديلات إعادة العمل من البداية أو تغيير الفكرة الأساسية المتفق عليها.' },
+                    terms_6_title: { en: '6. Responsibilities', ar: '٦. المسؤوليات' },
+                    terms_6_content: { en: '<strong>Provider\'s Responsibilities:</strong><br>- Commitment to quality and specified deadlines.<br>- Maintaining the confidentiality of the client\'s data and project information.<br><strong>Client\'s Responsibilities:</strong><br>- Providing the provider with all required information and materials (images, logos, data) on time.<br>- Reviewing the submitted work and providing feedback within a reasonable period (e.g., 3 business days).', ar: '<strong>مسؤوليات المزود:</strong><br>- الالتزام بالجودة والمواعيد المحددة.<br>- الحفاظ على سرية بيانات العميل ومعلومات مشروعه.<br><strong>مسؤوليات العميل:</strong><br>- تزويد المزود بكل المعلومات والمواد المطلوبة (صور، شعارات، بيانات) في الوقت المحدد.<br>- مراجعة الأعمال المقدمة والرد بالملاحظات خلال فترة معقولة (مثلاً 3 أيام عمل).' },
+                    terms_7_title: { en: '7. Ownership Rights', ar: '٧. حقوق الملكية' },
+                    terms_7_content: { en: 'All final files become the property of the client after full payment is made.<br>The provider reserves the right to display the completed work in their portfolio for marketing purposes unless otherwise agreed in writing.', ar: 'جميع الملفات النهائية تصبح ملك العميل بعد سداد المبلغ كاملًا.<br>يحتفظ المزود بحق عرض العمل المنجز في ملفه الشخصي (Portfolio) لأغراض تسويقية إلا إذا تم الاتفاق على غير ذلك كتابيًا.' },
+                    terms_8_title: { en: '8. Cancellation', ar: '٨. الإلغاء' },
+                    terms_8_content: { en: 'If the client requests to cancel the contract after work has begun, payment for the work completed up to the date of cancellation is required.<br>The provider has the right to terminate the contract if the client fails to comply with payment or their duties, while retaining the right to claim compensation.', ar: 'في حالة طلب العميل إلغاء التعاقد بعد بدء العمل، يتم دفع قيمة ما تم إنجازه حتى تاريخ الإلغاء.<br>للمزود الحق في إنهاء التعاقد إذا لم يلتزم العميل بالدفع أو بواجباته، مع الاحتفاظ بحق المطالبة بالتعويض.' },
+                    terms_9_title: { en: '9. Guarantees', ar: '٩. الضمانات' },
+                    terms_9_content: { en: 'The provider does not guarantee specific results (such as a certain number of followers or sales percentage) but is committed to making professional efforts to achieve the best possible results.', ar: 'لا يضمن المزود تحقيق نتائج معينة (مثل عدد متابعين أو نسبة مبيعات محددة)، لكن يلتزم ببذل الجهد المهني لتحقيق أفضل النتائج وفق المتاح.' },
+                    terms_10_title: { en: '10. Dispute Resolution', ar: '١٠. حل النزاعات' },
+                    terms_10_content: { en: 'In the event of a dispute, it will be resolved amicably between the parties as much as possible.<br>If an amicable solution cannot be reached, recourse will be made to the competent legal authorities in Egypt.', ar: 'في حالة حدوث خلاف، يتم حله وديًا بين الطرفين قدر الإمكان.<br>إذا تعذر الحل الودي، يتم اللجوء إلى الجهات القانونية المختصة في مصر.' },
+                    terms_11_title: { en: '11. General Provisions', ar: '١١. بنود عامة' },
+                    terms_11_content: { en: 'This contract represents the entire agreement between the two parties and supersedes any prior oral or written understandings.<br>Any clause of the contract can only be amended with the written consent of both parties.', ar: 'هذا العقد يمثل الاتفاق الكامل بين الطرفين ويلغي أي تفاهمات سابقة شفوية أو مكتوبة.<br>يمكن تعديل أي بند من العقد فقط بموافقة كتابية من الطرفين.' },
+                }
+            };
+
+            const appState = {
+                currentLanguage: 'en',
+                currentPage: 'calculator',
+                settings: {
+                    activeTab: 'services'
+                },
+                quote: {
+                    services: [], // [{ serviceId, enabled, options: [{ optionId, quantity }] }]
+                    durationMonths: 0,
+                    promoCode: null, // applied promo code object
+                },
+                isAdminAuthenticated: false,
+                // Main data object that holds everything, loaded from localStorage or initialData
+                data: {},
+                calculated: { // To store results of calculations
+                    subtotal: 0,
+                    durationDiscountValue: 0,
+                    durationDiscountPercent: 0,
+                    promoDiscountValue: 0,
+                    promoDiscountPercent: 0,
+                    finalTotal: 0,
+                    totalBeforeDiscounts: 0,
+                    effectiveMonths: 0
+                }
+            };
+
+            // --- CORE FUNCTIONS --- //
+
+            /**
+             * Initializes the application.
+             */
+            async function init() {
+                try {
+                    const app = window.firebase.initializeApp(firebaseConfig);
+                    db = window.firebase.getFirestore(app);
+                    const auth = window.firebase.getAuth(app);
+                    await window.firebase.signInAnonymously(auth);
+                    console.log('Firebase initialized and user signed in anonymously.');
+                } catch (error) {
+                    console.error("Firebase initialization failed:", error);
+                    let alertMessage = "Could not connect to the database. Please check your Firebase configuration. Using local data as a fallback.";
+                    if (error.code === 'auth/configuration-not-found') {
+                        alertMessage = "Firebase connection failed. Please make sure you have enabled 'Anonymous Authentication' in your Firebase project settings (Authentication -> Sign-in method). Using local data as a fallback.";
+                    }
+                    alert(alertMessage);
+
+                    await loadData(true); // true for local fallback
+                    setupInitialQuoteState();
+                    addEventListeners();
+                    render();
+                    return;
+                }
+
+                await loadData();
+                setupInitialQuoteState();
+                addEventListeners();
+                loadQuoteFromURL(); // Check for shared quote after data is loaded
+                render();
+            }
+
+            /**
+             * Sets up the initial structure of the quote based on available services.
+             */
+            function setupInitialQuoteState() {
+                if (!appState.data || !appState.data.services) {
+                    console.warn("Data object is missing services. Using empty array.");
+                    appState.data.services = [];
+                }
+                appState.quote.services = appState.data.services.map(service => {
+                    return {
+                        serviceId: service.id,
+                        enabled: false, // All services start as disabled
+                        options: service.options.map(option => ({
+                            optionId: option.id,
+                            quantity: 0
+                        }))
+                    };
+                });
+            }
+
+            /**
+             * Main render function to update the entire UI.
+             */
+            function render() {
+                // Update direction and language based on state
+                document.documentElement.lang = appState.currentLanguage;
+                document.documentElement.dir = appState.currentLanguage === 'ar' ? 'rtl' : 'ltr';
+
+                // Render UI components
+                translateUI();
+                updateBranding();
+                updateSocialLinks();
+                renderServices();
+                renderSuggestionPresets();
+                calculateTotals();
+                showPage(appState.currentPage);
+            }
+
+            /**
+             * Renders the service cards on the main page.
+             */
+            function renderServices() {
+                const container = document.getElementById('services-container');
+                container.innerHTML = '';
+                if (!appState.data.services) return;
+                appState.data.services.forEach(service => {
+                    const quoteService = appState.quote.services.find(s => s.serviceId === service.id);
+                    if (!quoteService) return;
+
+                    const card = document.createElement('div');
+                    card.className = `bg-white p-5 rounded-lg shadow-md transition-all duration-300 ${quoteService.enabled ? 'ring-2 ring-blue-500' : 'opacity-70 hover:opacity-100'}`;
+
+                    let optionsHTML = service.options.map(option => {
+                        const quoteOption = quoteService.options.find(o => o.optionId === option.id);
+                        const isSelected = quoteOption && quoteOption.quantity > 0;
+                        return `
+                        <div class="flex items-center justify-between p-3 border rounded-md hover:bg-gray-50 ${isSelected ? 'bg-blue-50 border-blue-400' : 'border-gray-200'}">
+                            <span class="flex-grow">${(option.label || {})[appState.currentLanguage] || (option.label || {}).en || ''}</span>
+                            <div class="flex items-center space-x-2">
+                                <span class="font-semibold text-blue-600 text-sm">${formatCurrency(option.unit_price)}</span>
+                                <input type="number" value="${quoteOption ? quoteOption.quantity : 0}" min="0" class="w-20 p-1 border border-gray-300 rounded-md service-option-quantity" data-service-id="${service.id}" data-option-id="${option.id}">
+                            </div>
+                        </div>
+                    `;
+                    }).join('');
+
+                    card.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold">${(service.name || {})[appState.currentLanguage] || (service.name || {}).en || ''}</h3>
+                         <div class="flex items-center">
+                            <span class="text-sm font-medium mr-2">${t('serviceEnabled')}</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" ${quoteService.enabled ? 'checked' : ''} class="sr-only peer service-toggle" data-service-id="${service.id}">
+                                <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="${quoteService.enabled ? '' : 'hidden'}">
+                        <div class="flex flex-col space-y-2">
+                            ${optionsHTML}
+                        </div>
+                    </div>
+                `;
+                    container.appendChild(card);
+                });
+            }
+
+            /**
+             * Renders the suggestion preset buttons.
+             */
+            function renderSuggestionPresets() {
+                const container = document.getElementById('suggestion-presets');
+                if (!appState.data.settings || !appState.data.settings.suggestionPresets) return;
+                container.innerHTML = appState.data.settings.suggestionPresets.map(months =>
+                    `<button class="suggestion-btn bg-blue-100 text-blue-800 text-sm font-semibold px-3 py-1 rounded-full hover:bg-blue-200" data-months="${months}">${months} ${t('months')}</button>`
+                ).join('');
+            }
+
+            /**
+             * Calculates all totals and updates the app state.
+             */
+            function calculateTotals() {
+                const quote = appState.quote;
+                const settings = appState.data.settings;
+
+                if (!quote.services || !settings.contractDiscountTiers) {
+                    console.warn("Cannot calculate totals, quote or settings data is missing.");
+                    return;
+                }
+
+                // 1. Calculate Subtotal (this is the MONTHLY total)
+                const subtotal = quote.services.reduce((total, quoteService) => {
+                    if (!quoteService.enabled) return total;
+
+                    const serviceData = appState.data.services.find(s => s.id === quoteService.serviceId);
+                    if (!serviceData) return total;
+
+                    const serviceTotal = quoteService.options.reduce((optionTotal, quoteOption) => {
+                        if (quoteOption.quantity <= 0) return optionTotal;
+                        const optionData = serviceData.options.find(o => o.id === quoteOption.optionId);
+                        if (!optionData) return optionTotal;
+                        return optionTotal + (quoteOption.quantity * optionData.unit_price);
+                    }, 0);
+
+                    return total + serviceTotal;
+                }, 0);
+
+                // If duration is 0, treat it as 1 for total calculation. A 0-month contract is a one-off project.
+                const effectiveMonths = quote.durationMonths < 1 ? 1 : quote.durationMonths;
+                const totalBeforeDiscounts = subtotal * effectiveMonths;
+
+                // 2. Calculate Duration Discount (based on the total contract value)
+                const applicableTier = settings.contractDiscountTiers
+                    .slice() // Create a copy to sort
+                    .sort((a, b) => b.months - a.months) // Sort descending by months
+                    .find(tier => quote.durationMonths >= tier.months);
+
+                const durationDiscountPercent = applicableTier ? applicableTier.percent : 0;
+                const durationDiscountValue = totalBeforeDiscounts * (durationDiscountPercent / 100);
+                const subtotalAfterDuration = totalBeforeDiscounts - durationDiscountValue;
+
+                // 3. Calculate Promo Discount
+                const promo = quote.promoCode;
+                const promoDiscountPercent = (promo && promo.active) ? promo.percent : 0;
+                const promoDiscountValue = subtotalAfterDuration * (promoDiscountPercent / 100);
+
+                // 4. Calculate Final Total
+                const finalTotal = subtotalAfterDuration - promoDiscountValue;
+
+                // 5. Update app state
+                appState.calculated = {
+                    subtotal: subtotal,
+                    durationDiscountValue: durationDiscountValue,
+                    durationDiscountPercent: durationDiscountPercent,
+                    promoDiscountValue: promoDiscountValue,
+                    promoDiscountPercent: promoDiscountPercent,
+                    finalTotal: finalTotal,
+                    totalBeforeDiscounts: totalBeforeDiscounts,
+                    effectiveMonths: effectiveMonths
+                };
+
+                // 6. Update UI
+                updateUIFromState();
+            }
+
+            /**
+             * Updates all dynamic UI elements from the app state.
+             */
+            function updateUIFromState() {
+                // Slider
+                const slider = document.getElementById('duration-slider');
+                if (slider.value != appState.quote.durationMonths) {
+                    slider.value = appState.quote.durationMonths;
+                }
+                document.getElementById('duration-value').textContent = `${appState.quote.durationMonths} ${t('months')}`;
+
+                // Sticky footer values
+                document.getElementById('subtotal-value').textContent = formatCurrency(appState.calculated.subtotal);
+                document.getElementById('duration-discount-value').textContent = `- ${formatCurrency(appState.calculated.durationDiscountValue)} (${appState.calculated.durationDiscountPercent}%)`;
+                document.getElementById('promo-discount-value').textContent = `- ${formatCurrency(appState.calculated.promoDiscountValue)} (${appState.calculated.promoDiscountPercent}%)`;
+                document.getElementById('final-total-value').textContent = formatCurrency(appState.calculated.finalTotal);
+            }
+
+            /**
+             * Adds all event listeners for the application.
+             */
+            function addEventListeners() {
+                // Service card interactions
+                document.getElementById('services-container').addEventListener('input', (e) => {
+                    const serviceId = parseInt(e.target.dataset.serviceId);
+                    const optionId = parseInt(e.target.dataset.optionId);
+                    const quoteService = appState.quote.services.find(s => s.serviceId === serviceId);
+                    if (!quoteService) return;
+                    const quoteOption = quoteService.options.find(o => o.optionId === optionId);
+                    if (!quoteOption) return;
+
+                    if (e.target.classList.contains('service-option-quantity')) {
+                        quoteOption.quantity = parseInt(e.target.value) || 0;
+                    }
+
+                    calculateTotals();
+                });
+
+                document.getElementById('services-container').addEventListener('change', (e) => {
+                    const serviceId = parseInt(e.target.dataset.serviceId);
+                    const quoteService = appState.quote.services.find(s => s.serviceId === serviceId);
+                    if (!quoteService) return;
+
+                    if (e.target.classList.contains('service-toggle')) {
+                        quoteService.enabled = e.target.checked;
+                        renderServices();
+                        calculateTotals();
+                    }
+                });
+
+                // Logo click
+                document.getElementById('logo-link').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showPage('calculator');
+                });
+
+                // Nav link clicks
+                document.getElementById('nav-links').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const target = e.target.closest('.nav-link');
+                    if (target && target.dataset.page) {
+                        showPage(target.dataset.page);
+                    }
+                    if (e.target.id === 'lang-switcher') {
+                        toggleLanguage();
+                    }
+                });
+
+                // Duration slider
+                document.getElementById('duration-slider').addEventListener('input', (e) => {
+                    appState.quote.durationMonths = parseInt(e.target.value);
+                    calculateTotals();
+                });
+
+                // Suggestion presets
+                document.getElementById('suggestion-presets').addEventListener('click', (e) => {
+                    if (e.target.classList.contains('suggestion-btn')) {
+                        handleSuggestionClick(parseInt(e.target.dataset.months));
+                    }
+                });
+
+                // Modal
+                document.getElementById('modal-close-btn').addEventListener('click', () => {
+                    document.getElementById('suggestion-modal').classList.add('hidden');
+                });
+                document.getElementById('modal-apply-btn').addEventListener('click', handleApplySuggestion);
+
+
+                // Promo code
+                document.getElementById('apply-promo-btn').addEventListener('click', handleApplyPromoCode);
+                document.getElementById('promo-code-input').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') handleApplyPromoCode();
+                });
+
+                // Quote Actions
+                document.getElementById('export-pdf-btn').addEventListener('click', handleExportPDF);
+                document.getElementById('share-quote-btn').addEventListener('click', handleShareQuote);
+
+                // Settings Page
+                addSettingsEventListeners();
+            }
+
+            /**
+             * Handles clicking a duration suggestion.
+             */
+            function handleSuggestionClick(months) {
+                const monthlyTotal = appState.calculated.subtotal;
+                const currentFinalTotal = appState.calculated.finalTotal;
+
+                // Calculate the new total based on the suggestion
+                const effectiveMonths = months < 1 ? 1 : months;
+                const totalBeforeDiscounts = monthlyTotal * effectiveMonths;
+
+                const applicableTier = appState.data.settings.contractDiscountTiers
+                    .slice()
+                    .sort((a, b) => b.months - a.months)
+                    .find(tier => months >= tier.months);
+
+                const discountPercent = applicableTier ? applicableTier.percent : 0;
+                const durationDiscount = totalBeforeDiscounts * (discountPercent / 100);
+                const totalAfterDuration = totalBeforeDiscounts - durationDiscount;
+
+                const promo = appState.quote.promoCode;
+                const promoPercent = (promo && promo.active) ? promo.percent : 0;
+                const promoDiscount = totalAfterDuration * (promoPercent / 100);
+
+                const newFinalTotal = totalAfterDuration - promoDiscount;
+
+                // Populate and show modal
+                document.getElementById('modal-current-price').textContent = formatCurrency(currentFinalTotal);
+                document.getElementById('modal-new-price').textContent = formatCurrency(newFinalTotal);
+                document.getElementById('modal-apply-btn').dataset.months = months;
+                document.getElementById('suggestion-modal').classList.remove('hidden');
+            }
+
+            function handleApplySuggestion() {
+                const months = parseInt(document.getElementById('modal-apply-btn').dataset.months);
+                appState.quote.durationMonths = months;
+                document.getElementById('suggestion-modal').classList.add('hidden');
+                calculateTotals(); // This will also update the UI
+            }
+
+            /**
+             * Handles applying a promo code.
+             */
+            function handleApplyPromoCode() {
+                const input = document.getElementById('promo-code-input');
+                const code = input.value.trim().toUpperCase();
+                const statusEl = document.getElementById('promo-status');
+
+                const promo = appState.data.promoCodes.find(p => p.code.toUpperCase() === code);
+
+                if (!promo) {
+                    appState.quote.promoCode = null;
+                    statusEl.textContent = t('promoInvalid');
+                    statusEl.className = 'h-4 mt-1 text-sm text-red-500';
+                } else if (!promo.active) {
+                    appState.quote.promoCode = null;
+                    statusEl.textContent = t('promoInactive');
+                    statusEl.className = 'h-4 mt-1 text-sm text-yellow-600';
+                } else {
+                    appState.quote.promoCode = promo;
+                    statusEl.textContent = t('promoSuccess');
+                    statusEl.className = 'h-4 mt-1 text-sm text-green-600';
+                }
+
+                calculateTotals();
+                setTimeout(() => statusEl.textContent = '', 4000);
+            }
+
+            /**
+             * Handles generating and exporting a PDF.
+             */
+            function handleExportPDF() {
+                const calcs = appState.calculated;
+                const element = `
+                <div style="font-family: 'Helvetica', sans-serif; padding: 40px; color: #333;">
+                    <header style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 40px;">
+                        <div>
+                             <img src="${appState.data.settings.logoUrl}" style="height: 60px;">
+                             <h1 style="font-size: 28px; font-weight: bold; margin:0;">${t('agencyName')}</h1>
+                        </div>
+                        <div style="text-align: right;">
+                             <h2 style="font-size: 24px; font-weight: bold; margin:0;">${t('quote')}</h2>
+                             <p style="font-size: 14px; color: #666; margin:0;">Date: ${new Date().toLocaleDateString()}</p>
+                        </div>
+                    </header>
+                    
+                    <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Services Breakdown</h3>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                        <thead>
+                            <tr style="background-color: #f9f9f9; text-align: left;">
+                                <th style="padding: 0.75rem;">Service</th>
+                                <th style="padding: 0.75rem;">Option</th>
+                                <th style="padding: 0.75rem; text-align: right;">Quantity</th>
+                                <th style="padding: 0.75rem; text-align: right;">Unit Price</th>
+                                <th style="padding: 0.75rem; text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${appState.quote.services.flatMap(quoteService => {
+                    if (!quoteService.enabled) return [];
+                    const service = appState.data.services.find(s => s.id === quoteService.serviceId);
+
+                    return quoteService.options
+                        .filter(opt => opt.quantity > 0)
+                        .map(quoteOption => {
+                            const option = service.options.find(o => o.id === quoteOption.optionId);
+                            return `<tr style="border-bottom: 1px solid #e5e7eb;">
+                                                <td style="padding: 0.75rem;">${service.name[appState.currentLanguage]}</td>
+                                                <td style="padding: 0.75rem;">${option.label[appState.currentLanguage]}</td>
+                                                <td style="padding: 0.75rem; text-align: right;">${quoteOption.quantity}</td>
+                                                <td style="padding: 0.75rem; text-align: right;">${formatCurrency(option.unit_price)}</td>
+                                                <td style="padding: 0.75rem; text-align: right;">${formatCurrency(quoteOption.quantity * option.unit_price)}</td>
+                                            </tr>`;
+                        });
+                }).join('')
+                    }
+                        </tbody>
+                    </table>
+                    
+                    <div style="display: flex; justify-content: flex-end;">
+                        <div style="width: 50%; max-width: 400px;">
+                            <table style="width: 100%;">
+                                <tbody>
+                                    <tr><td style="padding: 0.5rem;">${t('subtotal')}:</td><td style="padding: 0.5rem; text-align: right;">${formatCurrency(calcs.subtotal)}</td></tr>
+                                     <tr><td style="padding: 0.5rem;">${t('contractDuration')}:</td><td style="padding: 0.5rem; text-align: right;">${calcs.effectiveMonths} ${t('months')}</td></tr>
+                                    <tr style="border-top: 1px solid #e5e7eb;"><td style="padding: 0.5rem;">${t('totalBeforeDiscount')}:</td><td style="padding: 0.5rem; text-align: right;">${formatCurrency(calcs.totalBeforeDiscounts)}</td></tr>
+                                    <tr><td style="padding: 0.5rem;">${t('durationDiscount')} (${calcs.durationDiscountPercent}%):</td><td style="padding: 0.5rem; text-align: right; color: #16a34a;">- ${formatCurrency(calcs.durationDiscountValue)}</td></tr>
+                                    <tr><td style="padding: 0.5rem;">${t('promoDiscount')} (${calcs.promoDiscountPercent}%):</td><td style="padding: 0.5rem; text-align: right; color: #16a34a;">- ${formatCurrency(calcs.promoDiscountValue)}</td></tr>
+                                    <tr style="font-weight: bold; font-size: 1.25rem; border-top: 2px solid #3b82f6; color: #2563eb;"><td style="padding: 0.75rem 0.5rem;">${t('finalTotal')}:</td><td style="padding: 0.75rem 0.5rem; text-align: right;">${formatCurrency(calcs.finalTotal)}</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+                const opt = {
+                    margin: 0.5,
+                    filename: 'JoyUp-Agency-Quote.pdf',
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2 },
+                    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+                html2pdf().from(element).set(opt).save();
+            }
+
+            /**
+             * Generates and copies a shareable link.
+             */
+            function handleShareQuote() {
+                const dataToShare = {
+                    services: appState.quote.services
+                        .filter(s => s.enabled)
+                        .map(s => ({
+                            id: s.serviceId,
+                            opts: s.options.filter(o => o.quantity > 0).map(o => ({ id: o.optionId, q: o.quantity }))
+                        })),
+                    duration: appState.quote.durationMonths,
+                    promo: appState.quote.promoCode ? appState.quote.promoCode.code : null
+                };
+                const jsonString = JSON.stringify(dataToShare);
+                const base64String = btoa(jsonString);
+                const url = `${window.location.origin}${window.location.pathname}#quote=${base64String}`;
+
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('Quote link copied to clipboard!');
+                });
+            }
+
+            /**
+             * Loads quote from a shared link hash.
+             */
+            function loadQuoteFromURL() {
+                const hash = window.location.hash;
+                if (hash.startsWith('#quote=')) {
+                    try {
+                        const base64String = hash.substring(7);
+                        const decodedString = atob(base64String);
+                        const sharedState = JSON.parse(decodedString);
+
+                        // Reset quote state before applying shared link data
+                        setupInitialQuoteState();
+
+                        if (sharedState.services) {
+                            sharedState.services.forEach(sharedService => {
+                                const localService = appState.quote.services.find(s => s.serviceId === sharedService.id);
+                                if (localService) {
+                                    localService.enabled = true;
+                                    sharedService.opts.forEach(sharedOption => {
+                                        const localOption = localService.options.find(o => o.optionId === sharedOption.id);
+                                        if (localOption) {
+                                            localOption.quantity = sharedOption.q;
+                                        }
+                                    });
+                                }
+                            });
+                        }
+
+                        appState.quote.durationMonths = sharedState.duration || 0;
+
+                        if (sharedState.promo) {
+                            document.getElementById('promo-code-input').value = sharedState.promo;
+                            handleApplyPromoCode();
+                        }
+
+                        render(); // Re-render with the new state
+                        window.location.hash = ''; // Clear hash to prevent reloading on refresh
+                    } catch (error) {
+                        console.error("Failed to load quote from URL:", error);
+                    }
+                }
+            }
+
+
+            // --- UI & TRANSLATION FUNCTIONS --- //
+
+            /**
+             * Translates all UI elements with a `data-translate` attribute.
+             */
+            function translateUI() {
+                document.querySelectorAll('[data-translate]').forEach(el => {
+                    const key = el.dataset.translate;
+                    if (appState.data.translations[key] && appState.data.translations[key][appState.currentLanguage]) {
+                        el.textContent = appState.data.translations[key][appState.currentLanguage];
+                    }
+                });
+                // Specific translations not using data-translate
+                document.querySelector('.nav-link[data-page="calculator"]').textContent = t('calculator');
+                document.querySelector('.nav-link[data-page="terms"]').textContent = t('terms');
+                document.getElementById('lang-switcher').textContent = appState.currentLanguage === 'en' ? 'AR' : 'EN';
+                document.getElementById('agency-name').textContent = t('agencyName');
+                document.getElementById('welcome-message').textContent = t('welcomeMessage');
+                document.getElementById('apply-promo-btn').textContent = t('apply');
+                document.getElementById('promo-code-input').placeholder = t('promoCode');
+
+                // Render terms accordion with translations
+                renderTermsAccordion();
+            }
+
+            /**
+             * Renders the terms and conditions accordion.
+             */
+            function renderTermsAccordion() {
+                const container = document.getElementById('terms-accordion-container');
+                let content = '';
+                for (let i = 1; i <= 11; i++) {
+                    content += `
+                    <details class="accordion-item bg-gray-50 rounded-lg">
+                        <summary class="p-4 font-bold cursor-pointer list-none">${t(`terms_${i}_title`)}</summary>
+                        <div class="p-4 border-t text-gray-700">
+                           ${t(`terms_${i}_content`)}
+                        </div>
+                    </details>
+                `;
+                }
+                container.innerHTML = content;
+            }
+
+            /**
+             * Toggles the language and re-renders the UI.
+             */
+            function toggleLanguage() {
+                appState.currentLanguage = appState.currentLanguage === 'en' ? 'ar' : 'en';
+                render();
+            }
+
+            /**
+             * Updates branding elements like logo and agency name.
+             */
+            function updateBranding() {
+                if (!appState.data.settings) return;
+                document.getElementById('logo-img').src = appState.data.settings.logoUrl;
+            }
+
+            /**
+             * Updates the social media links in the main footer.
+             */
+            function updateSocialLinks() {
+                if (!appState.data.settings || !appState.data.settings.socialLinks) return;
+                const links = appState.data.settings.socialLinks;
+                const container = document.getElementById('social-links-container');
+                container.innerHTML = `
+                <a href="${links.facebook}" target="_blank" class="text-gray-400 hover:text-white transition-colors">
+                    <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v2.385z"/></svg>
+                </a>
+                <a href="${links.linkedin}" target="_blank" class="text-gray-400 hover:text-white transition-colors">
+                    <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M4.98 3.5c0 1.381-1.11 2.5-2.48 2.5s-2.48-1.119-2.48-2.5c0-1.38 1.11-2.5 2.48-2.5s2.48 1.12 2.48 2.5zm.02 4.5h-5v16h5v-16zm7.982 0h-4.98v16h4.98v-8.396c0-2.002.396-3.996 2.984-3.996 2.584 0 2.584 2.333 2.584 4.122v8.27h4.98v-9.5c0-5-2.5-7.5-6.25-7.5s-5.25 2.5-5.25 2.5z"/></svg>
+                </a>
+                <a href="${links.instagram}" target="_blank" class="text-gray-400 hover:text-white transition-colors">
+                    <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919 1.266-.057 1.644-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.358-.2 6.78-2.618 6.98-6.98.059-1.281.073-1.689.073-4.948s-.014-3.667-.072-4.947c-.2-4.358-2.618-6.78-6.98-6.98-1.281-.058-1.689-.072-4.948-.072zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44 1.441-.645 1.441-1.44-.645-1.44-1.441-1.44z"/></svg>
+                </a>
+                <a href="${links.tiktok}" target="_blank" class="text-gray-400 hover:text-white transition-colors">
+                    <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-2.43.05-4.86-.95-6.69-2.81-1.77-1.8-2.5-4.14-2.18-6.52.34-2.62 2.16-4.91 4.54-5.94.84-.36 1.73-.55 2.64-.56.31.01.62.02.93.03v.01c.32-.01.65-.02.98-.03.02 1.51.02 3.02 0 4.53-.31-.01-.62-.02-.93-.03-.56 0-1.11.11-1.62.33-1.03.42-1.88 1.2-2.39 2.18-.58 1.08-.7 2.38-.41 3.53.31 1.25 1.11 2.35 2.18 3.06 1.06.71 2.35 1.03 3.68.83 1.34-.19 2.62-.87 3.5-1.9.89-1.04 1.3-2.39 1.19-3.74-.01-3.44 0-6.88.01-10.32.01-.44-.02-.88-.08-1.32-.2-1.64-1.02-3.2-2.3-4.16-.97-.72-2.14-1.12-3.3-1.12z"/></svg>
+                </a>
+            `;
+            }
+
+            /**
+             * Shows the specified page and hides others.
+             */
+            function showPage(pageId) {
+                if (pageId === 'settings') {
+                    renderSettingsPage();
+                    document.getElementById('sticky-footer').classList.add('hidden');
+                } else {
+                    document.getElementById('sticky-footer').classList.remove('hidden');
+                }
+
+                document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
+                document.getElementById(`${pageId}-page`).classList.remove('hidden');
+
+                // Update active nav link
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.toggle('text-blue-600', link.dataset.page === pageId);
+                    link.classList.toggle('text-gray-600', link.dataset.page !== pageId);
+                });
+                appState.currentPage = pageId;
+            }
+
+            // --- DATA PERSISTENCE --- //
+
+            /**
+             * Loads data from Firestore or uses initial data.
+             */
+            async function loadData(localFallback = false) {
+                if (localFallback) {
+                    const savedData = localStorage.getItem('joyup-quote-data');
+                    appState.data = savedData ? JSON.parse(savedData) : JSON.parse(JSON.stringify(initialData));
+                    return;
+                }
+
+                const docRef = window.firebase.doc(db, "appData", DATA_DOC_ID);
+
+                // Set up a real-time listener for any changes in the database
+                window.firebase.onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        console.log("Real-time update from Firestore.");
+                        appState.data = docSnap.data();
+                    } else {
+                        // This case should ideally not happen after the initial load,
+                        // but it's good practice to handle it.
+                        console.log("Data document was deleted from Firestore. Re-initializing with local defaults.");
+                        appState.data = JSON.parse(JSON.stringify(initialData));
+                        saveData(); // Re-create the document
+                    }
+
+                    if (!isInitialLoad) {
+                        render(); // Re-render the whole app on real-time updates
+                    }
+                }, (error) => {
+                    console.error("Error listening to Firestore:", error);
+                    alert("Lost connection to the database. Some changes might not be saved.");
+                });
+
+                // For the first time the app loads, we fetch the data once.
+                // The onSnapshot listener will handle all subsequent updates.
+                try {
+                    const docSnap = await window.firebase.getDoc(docRef);
+                    if (docSnap.exists()) {
+                        console.log("Initial data loaded from Firestore.");
+                        appState.data = docSnap.data();
+                    } else {
+                        console.log("No data in Firestore. Creating initial document.");
+                        appState.data = JSON.parse(JSON.stringify(initialData));
+                        await window.firebase.setDoc(docRef, appState.data);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch initial data from Firestore:", error);
+                    alert("Could not fetch data. Using local data as a fallback.");
+                    loadData(true); // Fallback to local data
+                }
+                isInitialLoad = false;
+            }
+
+            /**
+             * Saves the current data state to Firestore.
+             */
+            async function saveData() {
+                if (!db) {
+                    alert('Database not connected. Cannot save changes.');
+                    return;
+                }
+
+                const docRef = window.firebase.doc(db, "appData", DATA_DOC_ID);
+                try {
+                    await window.firebase.setDoc(docRef, appState.data, { merge: true }); // merge:true prevents overwriting fields if something goes wrong
+                    alert('Settings saved to the database!');
+                } catch (error) {
+                    console.error("Error saving data to Firestore: ", error);
+                    alert("Failed to save settings to the database. Please check your connection.");
+                }
+                // No need to call render() here as the onSnapshot listener will do it automatically.
+            }
+
+            // --- UTILITY FUNCTIONS --- //
+
+            /**
+             * Gets a translated string for a given key.
+             */
+            function t(key) {
+                if (!appState.data.translations || !appState.data.translations[key]) return key;
+                return (appState.data.translations[key][appState.currentLanguage]) || key;
+            }
+
+            /**
+             * Formats a number as currency.
+             */
+            function formatCurrency(value) {
+                if (!appState.data.settings) return String(value);
+                const currency = appState.data.settings.currency[appState.currentLanguage] || '';
+                const formattedValue = new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(value);
+
+                return appState.currentLanguage === 'ar'
+                    ? `${formattedValue} ${currency}`
+                    : `${currency} ${formattedValue}`;
+            }
+
+            // --- SETTINGS PAGE LOGIC --- //
+
+            function renderSettingsPage() {
+                const loginView = document.getElementById('admin-login-view');
+                const settingsView = document.getElementById('admin-settings-view');
+
+                if (appState.isAdminAuthenticated) {
+                    loginView.classList.add('hidden');
+                    settingsView.classList.remove('hidden');
+                    renderSettingsTabs();
+                    renderSettingsTabContent();
+                } else {
+                    loginView.classList.remove('hidden');
+                    settingsView.classList.add('hidden');
+                }
+            }
+
+            function renderSettingsTabs() {
+                const tabs = [
+                    { id: 'services', label: t('tabServices') },
+                    { id: 'discounts', label: t('tabDiscounts') },
+                    { id: 'promos', label: t('tabPromos') },
+                    { id: 'branding', label: t('tabBranding') },
+                    { id: 'social', label: t('tabSocial') },
+                    { id: 'admin', label: t('tabAdmin') },
+                ];
+                const nav = document.querySelector('#admin-settings-view nav');
+                nav.innerHTML = tabs.map(tab => `
+                <button data-tab="${tab.id}" class="settings-tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${appState.settings.activeTab === tab.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}">
+                    ${tab.label}
+                </button>
+            `).join('');
+            }
+
+            function renderSettingsTabContent() {
+                const container = document.getElementById('settings-tab-content');
+                switch (appState.settings.activeTab) {
+                    case 'services':
+                        container.innerHTML = getServicesSettingsHTML();
+                        break;
+                    case 'discounts':
+                        container.innerHTML = getDiscountsSettingsHTML();
+                        break;
+                    case 'promos':
+                        container.innerHTML = getPromosSettingsHTML();
+                        break;
+                    case 'branding':
+                        container.innerHTML = getBrandingSettingsHTML();
+                        break;
+                    case 'social':
+                        container.innerHTML = getSocialSettingsHTML();
+                        break;
+                    case 'admin':
+                        container.innerHTML = getAdminSettingsHTML();
+                        break;
+                }
+            }
+
+            function getServicesSettingsHTML() {
+                let servicesHTML = appState.data.services.map(service => `
+                <details class="bg-gray-50 rounded-lg border mb-4" open>
+                    <summary class="p-3 font-bold cursor-pointer flex justify-between items-center">
+                        <span>${service.name.en} / ${service.name.ar}</span>
+                        <button class="delete-service-btn text-red-600 hover:text-red-800 text-sm font-bold" data-service-id="${service.id}">${t('delete')}</button>
+                    </summary>
+                    <div class="p-4 border-t bg-white space-y-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label class="block text-xs font-bold">${t('serviceNameEn')}</label><input type="text" value="${service.name.en}" class="w-full p-2 border rounded" data-path="services" data-id="${service.id}" data-field="name.en"></div>
+                            <div><label class="block text-xs font-bold">${t('serviceNameAr')}</label><input type="text" value="${service.name.ar}" class="w-full p-2 border rounded" data-path="services" data-id="${service.id}" data-field="name.ar"></div>
+                        </div>
+                        <h4 class="font-bold pt-2 border-t mt-2">${t('options')}</h4>
+                        <div class="space-y-2">
+                             ${service.options.map(opt => `
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-2 p-2 border rounded bg-gray-50">
+                                    <input type="text" value="${opt.label.en}" class="p-1 border rounded" placeholder="${t('optionLabelEn')}" data-path="services" data-id="${service.id}" data-sub-id="${opt.id}" data-field="label.en">
+                                    <input type="text" value="${opt.label.ar}" class="p-1 border rounded" placeholder="${t('optionLabelAr')}" data-path="services" data-id="${service.id}" data-sub-id="${opt.id}" data-field="label.ar">
+                                    <input type="number" value="${opt.unit_price}" class="p-1 border rounded" placeholder="${t('unitPrice')}" data-path="services" data-id="${service.id}" data-sub-id="${opt.id}" data-field="unit_price">
+                                    <button class="delete-option-btn bg-red-100 text-red-700 rounded text-xs" data-service-id="${service.id}" data-option-id="${opt.id}">${t('delete')}</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button class="add-option-btn text-blue-600 font-semibold text-sm mt-2" data-service-id="${service.id}">+ ${t('addOption')}</button>
+                    </div>
+                </details>
+            `).join('');
+
+                return `
+                <h2 class="text-xl font-bold mb-4">${t('manageServices')}</h2>
+                <div id="services-settings-container">${servicesHTML}</div>
+                <button id="add-service-btn" class="mt-4 text-white bg-blue-600 font-bold py-2 px-4 rounded hover:bg-blue-700">+ ${t('addNewService')}</button>
+            `;
+            }
+
+            function getDiscountsSettingsHTML() {
+                let tiersHTML = appState.data.settings.contractDiscountTiers.map((tier, index) => `
+                <div class="grid grid-cols-3 gap-4 items-center mb-2">
+                    <input type="number" value="${tier.months}" class="w-full p-2 border rounded" placeholder="${t('discountMonths')}" data-path="settings.contractDiscountTiers" data-index="${index}" data-field="months">
+                    <input type="number" value="${tier.percent}" class="w-full p-2 border rounded" placeholder="${t('discountPercent')}" data-path="settings.contractDiscountTiers" data-index="${index}" data-field="percent">
+                    <button class="delete-tier-btn bg-red-100 text-red-700 rounded text-sm p-2" data-index="${index}">${t('delete')}</button>
+                </div>
+            `).join('');
+
+                return `
+                <h2 class="text-xl font-bold mb-4">${t('manageDiscounts')}</h2>
+                ${tiersHTML}
+                <button id="add-tier-btn" class="mt-4 text-white bg-blue-600 font-bold py-2 px-4 rounded hover:bg-blue-700">+ ${t('addNewTier')}</button>
+                <div class="mt-6">
+                    <label class="block text-sm font-bold">${t('suggestionPresets')}</label>
+                    <input type="text" value="${appState.data.settings.suggestionPresets.join(', ')}" class="w-full p-2 border rounded" data-path="settings" data-field="suggestionPresets">
+                </div>
+            `;
+            }
+
+            function getPromosSettingsHTML() {
+                let promosHTML = appState.data.promoCodes.map((promo, index) => `
+                <div class="grid grid-cols-4 gap-4 items-center mb-2">
+                    <input type="text" value="${promo.code}" class="w-full p-2 border rounded uppercase" placeholder="${t('promoCodeLabel')}" data-path="promoCodes" data-index="${index}" data-field="code">
+                    <input type="number" value="${promo.percent}" class="w-full p-2 border rounded" placeholder="${t('promoPercent')}" data-path="promoCodes" data-index="${index}" data-field="percent">
+                    <label class="flex items-center space-x-2"><input type="checkbox" ${promo.active ? 'checked' : ''} class="h-5 w-5 rounded" data-path="promoCodes" data-index="${index}" data-field="active"><span>${t('promoActive')}</span></label>
+                    <button class="delete-promo-btn bg-red-100 text-red-700 rounded text-sm p-2" data-index="${index}">${t('delete')}</button>
+                </div>
+            `).join('');
+
+                return `
+                <h2 class="text-xl font-bold mb-4">${t('managePromos')}</h2>
+                ${promosHTML}
+                <button id="add-promo-btn" class="mt-4 text-white bg-blue-600 font-bold py-2 px-4 rounded hover:bg-blue-700">+ ${t('addNewPromo')}</button>
+            `;
+            }
+
+            function getBrandingSettingsHTML() {
+                return `
+                <h2 class="text-xl font-bold mb-4">${t('manageBranding')}</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold">${t('logo')}</label>
+                        <img src="${appState.data.settings.logoUrl}" class="h-16 w-auto border p-2 rounded my-2">
+                        <input type="file" id="logo-upload" accept="image/*" class="text-sm">
+                    </div>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label class="block text-sm font-bold">${t('currencyEn')}</label><input type="text" value="${appState.data.settings.currency.en}" class="w-full p-2 border rounded" data-path="settings.currency" data-field="en"></div>
+                        <div><label class="block text-sm font-bold">${t('currencyAr')}</label><input type="text" value="${appState.data.settings.currency.ar}" class="w-full p-2 border rounded" data-path="settings.currency" data-field="ar"></div>
+                    </div>
+                </div>
+            `;
+            }
+
+            function getSocialSettingsHTML() {
+                const links = appState.data.settings.socialLinks;
+                return `
+                <h2 class="text-xl font-bold mb-4">${t('manageSocial')}</h2>
+                <div class="space-y-4">
+                    <div><label class="block text-sm font-bold">Facebook</label><input type="text" value="${links.facebook}" class="w-full p-2 border rounded" data-path="settings.socialLinks" data-field="facebook"></div>
+                    <div><label class="block text-sm font-bold">LinkedIn</label><input type="text" value="${links.linkedin}" class="w-full p-2 border rounded" data-path="settings.socialLinks" data-field="linkedin"></div>
+                    <div><label class="block text-sm font-bold">Instagram</label><input type="text" value="${links.instagram}" class="w-full p-2 border rounded" data-path="settings.socialLinks" data-field="instagram"></div>
+                    <div><label class="block text-sm font-bold">TikTok</label><input type="text" value="${links.tiktok}" class="w-full p-2 border rounded" data-path="settings.socialLinks" data-field="tiktok"></div>
+                </div>
+            `;
+            }
+
+            function getAdminSettingsHTML() {
+                return `
+                <h2 class="text-xl font-bold mb-4">${t('manageAdmin')}</h2>
+                <div class="max-w-md space-y-4">
+                    <h3 class="font-semibold">${t('changePassword')}</h3>
+                    <div><label class="block text-sm font-bold">${t('currentPassword')}</label><input type="password" id="current-password" class="w-full p-2 border rounded"></div>
+                    <div><label class="block text-sm font-bold">${t('newPassword')}</label><input type="password" id="new-password" class="w-full p-2 border rounded"></div>
+                    <div><label class="block text-sm font-bold">${t('confirmNewPassword')}</label><input type="password" id="confirm-new-password" class="w-full p-2 border rounded"></div>
+                    <button id="change-password-btn" class="bg-gray-800 text-white font-bold py-2 px-4 rounded hover:bg-gray-900">${t('changePassword')}</button>
+                    <p id="password-change-status" class="h-4 mt-2 text-center"></p>
+                </div>
+            `;
+            }
+
+            function addSettingsEventListeners() {
+                const settingsPage = document.getElementById('settings-page');
+
+                settingsPage.addEventListener('click', e => {
+                    // Tab switching
+                    const tabBtn = e.target.closest('.settings-tab-btn');
+                    if (tabBtn) {
+                        appState.settings.activeTab = tabBtn.dataset.tab;
+                        renderSettingsPage();
+                    }
+
+                    // Save button
+                    if (e.target.id === 'save-settings-btn') {
+                        saveData();
+                    }
+
+                    // --- Services Tab Actions ---
+                    if (e.target.id === 'add-service-btn') {
+                        appState.data.services.push({
+                            id: Date.now(),
+                            name: { en: 'New Service', ar: 'خدمة جديدة' },
+                            options: [{ id: Date.now() + 1, label: { en: 'Default Option', ar: 'خيار افتراضي' }, unit_price: 100 }]
+                        });
+                        renderSettingsTabContent();
+                    }
+                    const deleteServiceBtn = e.target.closest('.delete-service-btn');
+                    if (deleteServiceBtn) {
+                        if (confirm(t('confirmDelete'))) {
+                            const serviceId = parseInt(deleteServiceBtn.dataset.serviceId);
+                            appState.data.services = appState.data.services.filter(s => s.id !== serviceId);
+                            renderSettingsTabContent();
+                        }
+                    }
+                    const addOptionBtn = e.target.closest('.add-option-btn');
+                    if (addOptionBtn) {
+                        const serviceId = parseInt(addOptionBtn.dataset.serviceId);
+                        const service = appState.data.services.find(s => s.id === serviceId);
+                        service.options.push({ id: Date.now(), label: { en: 'New Option', ar: 'خيار جديد' }, unit_price: 50 });
+                        renderSettingsTabContent();
+                    }
+                    const deleteOptionBtn = e.target.closest('.delete-option-btn');
+                    if (deleteOptionBtn) {
+                        if (confirm(t('confirmDelete'))) {
+                            const serviceId = parseInt(deleteOptionBtn.dataset.serviceId);
+                            const optionId = parseInt(deleteOptionBtn.dataset.optionId);
+                            const service = appState.data.services.find(s => s.id === serviceId);
+                            service.options = service.options.filter(o => o.id !== optionId);
+                            renderSettingsTabContent();
+                        }
+                    }
+
+                    // --- Discounts Tab Actions ---
+                    if (e.target.id === 'add-tier-btn') {
+                        appState.data.settings.contractDiscountTiers.push({ months: 0, percent: 0 });
+                        renderSettingsTabContent();
+                    }
+                    const deleteTierBtn = e.target.closest('.delete-tier-btn');
+                    if (deleteTierBtn) {
+                        const index = parseInt(deleteTierBtn.dataset.index);
+                        appState.data.settings.contractDiscountTiers.splice(index, 1);
+                        renderSettingsTabContent();
+                    }
+
+                    // --- Promos Tab Actions ---
+                    if (e.target.id === 'add-promo-btn') {
+                        appState.data.promoCodes.push({ code: 'NEWCODE', percent: 10, active: true });
+                        renderSettingsTabContent();
+                    }
+                    const deletePromoBtn = e.target.closest('.delete-promo-btn');
+                    if (deletePromoBtn) {
+                        const index = parseInt(deletePromoBtn.dataset.index);
+                        appState.data.promoCodes.splice(index, 1);
+                        renderSettingsTabContent();
+                    }
+                });
+
+                settingsPage.addEventListener('input', e => {
+                    const { path, id, subId, index, field } = e.target.dataset;
+                    if (!path) return;
+
+                    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+
+                    // This is a simple but powerful way to update nested state
+                    // It relies on data-attributes to build the path to the state object
+                    let target = appState.data;
+                    const pathParts = path.split('.');
+
+                    pathParts.forEach(part => {
+                        if (target[part]) target = target[part];
+                    });
+
+                    if (Array.isArray(target)) {
+                        const itemIndex = id ? target.findIndex(item => item.id == id) : index;
+                        if (itemIndex > -1) {
+                            if (subId) { // Editing a sub-item (like a service option)
+                                const subItem = target[itemIndex].options.find(sub => sub.id == subId);
+                                if (field.includes('.')) {
+                                    const [f1, f2] = field.split('.');
+                                    subItem[f1][f2] = value;
+                                } else {
+                                    subItem[field] = parseFloat(value) || value;
+                                }
+                            } else { // Editing a top-level item in an array
+                                if (field.includes('.')) {
+                                    const [f1, f2] = field.split('.');
+                                    target[itemIndex][f1][f2] = value;
+                                } else {
+                                    target[itemIndex][field] = isNaN(parseFloat(value)) ? value : parseFloat(value);
+                                }
+                            }
+                        }
+                    } else { // Editing a direct object property (like settings)
+                        if (field.includes('.')) {
+                            const [f1, f2] = field.split('.');
+                            target[f1][f2] = value;
+                        } else if (field === 'suggestionPresets') {
+                            target[field] = value.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+                        }
+                        else {
+                            target[field] = value;
+                        }
+                    }
+                });
+
+                // Specific event listeners for file upload and login/admin actions
+                settingsPage.addEventListener('change', e => {
+                    if (e.target.id === 'logo-upload') {
+                        const file = e.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                                appState.data.settings.logoUrl = event.target.result;
+                                updateBranding(); // Instantly show new logo
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    }
+                });
+
+                settingsPage.addEventListener('click', e => {
+                    if (e.target.id === 'admin-login-btn') {
+                        const pass = document.getElementById('admin-password-input').value;
+                        const errorEl = document.getElementById('admin-login-error');
+
+                        const isMatch = pass === appState.data.settings.adminPassword;
+                        if (isMatch) {
+                            appState.isAdminAuthenticated = true;
+                            renderSettingsPage();
+                        } else {
+                            errorEl.textContent = t('incorrectPassword');
+                            setTimeout(() => errorEl.textContent = '', 3000);
+                        }
+                    }
+
+                    // Admin actions
+                    if (e.target.id === 'change-password-btn') {
+                        const currentPass = document.getElementById('current-password').value;
+                        const newPass = document.getElementById('new-password').value;
+                        const confirmPass = document.getElementById('confirm-new-password').value;
+                        const statusEl = document.getElementById('password-change-status');
+
+                        const isMatch = currentPass === appState.data.settings.adminPassword;
+
+                        if (!isMatch) {
+                            statusEl.textContent = t('incorrectCurrentPassword');
+                            statusEl.className = 'h-4 mt-2 text-center text-red-500';
+                        } else if (newPass !== confirmPass) {
+                            statusEl.textContent = t('passwordsDoNotMatch');
+                            statusEl.className = 'h-4 mt-2 text-center text-red-500';
+                        } else {
+                            appState.data.settings.adminPassword = newPass;
+                            statusEl.textContent = t('passwordChanged');
+                            statusEl.className = 'h-4 mt-2 text-center text-green-600';
+                        }
+                        setTimeout(() => statusEl.textContent = '', 4000);
+                    }
+                });
+            }
+
+            // --- START THE APP --- //
+            init();
+        };
+    </script>
+
+</body>
+
+</html>
